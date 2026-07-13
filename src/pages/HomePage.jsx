@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
 import ConfirmModal from "../components/ConfirmModal";
 import TaskCard from "../components/TaskCard";
+import TaskFilters from "../components/TaskFilters";
 import TaskForm from "../components/TaskForm";
+import TaskStats from "../components/TaskStats";
 
 import {
   createTask,
@@ -12,9 +15,15 @@ import {
 
 function HomePage() {
   const [tasks, setTasks] = useState(() => getTasks());
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [taskToDelete, setTaskToDelete] = useState(null);
+
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
 
   const completedTaskCount = tasks.filter(
     (task) => task.completed
@@ -22,6 +31,51 @@ function HomePage() {
 
   const pendingTaskCount =
     tasks.length - completedTaskCount;
+
+  const filteredTasks = useMemo(() => {
+    const normalizedSearchText = searchText
+      .trim()
+      .toLocaleLowerCase("tr-TR");
+
+    return tasks.filter((task) => {
+      const taskTitle = task.title
+        .toLocaleLowerCase("tr-TR");
+
+      const taskDescription = (task.description || "")
+        .toLocaleLowerCase("tr-TR");
+
+      const matchesSearch =
+        normalizedSearchText === "" ||
+        taskTitle.includes(normalizedSearchText) ||
+        taskDescription.includes(normalizedSearchText);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "completed" && task.completed) ||
+        (statusFilter === "pending" && !task.completed);
+
+      const matchesCategory =
+        categoryFilter === "all" ||
+        task.category === categoryFilter;
+
+      const matchesPriority =
+        priorityFilter === "all" ||
+        task.priority === priorityFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesCategory &&
+        matchesPriority
+      );
+    });
+  }, [
+    tasks,
+    searchText,
+    statusFilter,
+    categoryFilter,
+    priorityFilter,
+  ]);
 
   function scrollToForm() {
     window.setTimeout(() => {
@@ -102,6 +156,13 @@ function HomePage() {
     setTaskToDelete(null);
   }
 
+  function handleClearFilters() {
+    setSearchText("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setPriorityFilter("all");
+  }
+
   return (
     <main>
       <section className="hero-section">
@@ -118,8 +179,8 @@ function HomePage() {
 
             <p>
               Görevlerini oluştur, kategorilere ayır,
-              önceliklendir ve ilerlemeni tek bir
-              ekrandan takip et.
+              önceliklendir ve ilerlemeni tek bir ekrandan takip
+              et.
             </p>
 
             <button
@@ -135,9 +196,7 @@ function HomePage() {
             <div className="hero-card-header">
               <span>Görev ilerlemesi</span>
 
-              <span className="status-badge">
-                Aktif
-              </span>
+              <span className="status-badge">Aktif</span>
             </div>
 
             <div className="hero-stat">
@@ -160,10 +219,7 @@ function HomePage() {
         </div>
       </section>
 
-      <section
-        id="tasks"
-        className="tasks-section"
-      >
+      <section id="tasks" className="tasks-section">
         <div className="container">
           <div className="section-heading">
             <div>
@@ -183,6 +239,8 @@ function HomePage() {
             </button>
           </div>
 
+          <TaskStats tasks={tasks} />
+
           {isFormOpen && (
             <TaskForm
               key={editingTask?.id || "new-task"}
@@ -192,17 +250,31 @@ function HomePage() {
             />
           )}
 
+          {tasks.length > 0 && (
+            <TaskFilters
+              searchText={searchText}
+              statusFilter={statusFilter}
+              categoryFilter={categoryFilter}
+              priorityFilter={priorityFilter}
+              filteredTaskCount={filteredTasks.length}
+              totalTaskCount={tasks.length}
+              onSearchChange={setSearchText}
+              onStatusChange={setStatusFilter}
+              onCategoryChange={setCategoryFilter}
+              onPriorityChange={setPriorityFilter}
+              onClearFilters={handleClearFilters}
+            />
+          )}
+
           {tasks.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">
-                📋
-              </div>
+              <div className="empty-state-icon">📋</div>
 
               <h3>Henüz görev bulunmuyor</h3>
 
               <p>
-                İlk görevini oluşturarak planlarını
-                görünür hale getir.
+                İlk görevini oluşturarak planlarını görünür hale
+                getir.
               </p>
 
               <button
@@ -213,15 +285,32 @@ function HomePage() {
                 İlk görevi oluştur
               </button>
             </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="empty-state filtered-empty-state">
+              <div className="empty-state-icon">🔎</div>
+
+              <h3>Eşleşen görev bulunamadı</h3>
+
+              <p>
+                Arama kelimesini veya seçtiğin filtreleri
+                değiştirmeyi dene.
+              </p>
+
+              <button
+                className="empty-state-button"
+                type="button"
+                onClick={handleClearFilters}
+              >
+                Filtreleri temizle
+              </button>
+            </div>
           ) : (
             <div className="task-grid">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
-                  onToggleComplete={
-                    handleToggleComplete
-                  }
+                  onToggleComplete={handleToggleComplete}
                   onEdit={openEditTaskForm}
                   onDelete={handleDeleteRequest}
                 />
@@ -231,27 +320,20 @@ function HomePage() {
         </div>
       </section>
 
-      <section
-        id="about"
-        className="about-section"
-      >
+      <section id="about" className="about-section">
         <div className="container about-content">
           <div>
-            <span className="section-label">
-              TaskFlow
-            </span>
-
+            <span className="section-label">TaskFlow</span>
             <h2>Proje hakkında</h2>
           </div>
 
           <p>
             TaskFlow; ReactJS, modern JavaScript,
-            LocalStorage ve Pure CSS kullanılarak
-            geliştirilen bir görev yönetim
-            uygulamasıdır. Kullanıcılar görevlerini
-            ekleyebilir, listeleyebilir,
-            düzenleyebilir, tamamlayabilir ve
-            silebilir.
+            LocalStorage ve Pure CSS kullanılarak geliştirilen
+            bir görev yönetim uygulamasıdır. Kullanıcılar
+            görevlerini ekleyebilir, listeleyebilir,
+            düzenleyebilir, tamamlayabilir, silebilir,
+            arayabilir ve filtreleyebilir.
           </p>
         </div>
       </section>
