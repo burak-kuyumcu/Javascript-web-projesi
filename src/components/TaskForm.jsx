@@ -1,15 +1,33 @@
 import { useState } from "react";
 
-const initialFormData = {
+const emptyFormData = {
   title: "",
   description: "",
   category: "Genel",
   priority: "medium",
 };
 
-function TaskForm({ onAddTask, onCancel }) {
-  const [formData, setFormData] = useState(initialFormData);
+function TaskForm({
+  onSubmitTask,
+  onCancel,
+  editingTask = null,
+}) {
+  const [formData, setFormData] = useState(() => {
+    if (!editingTask) {
+      return emptyFormData;
+    }
+
+    return {
+      title: editingTask.title,
+      description: editingTask.description,
+      category: editingTask.category,
+      priority: editingTask.priority,
+    };
+  });
+
   const [errors, setErrors] = useState({});
+
+  const isEditMode = Boolean(editingTask);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -31,7 +49,8 @@ function TaskForm({ onAddTask, onCancel }) {
     if (!formData.title.trim()) {
       newErrors.title = "Görev başlığı zorunludur.";
     } else if (formData.title.trim().length < 3) {
-      newErrors.title = "Görev başlığı en az 3 karakter olmalıdır.";
+      newErrors.title =
+        "Görev başlığı en az 3 karakter olmalıdır.";
     }
 
     if (formData.description.length > 250) {
@@ -52,23 +71,27 @@ function TaskForm({ onAddTask, onCancel }) {
       return;
     }
 
-    onAddTask({
+    onSubmitTask({
       title: formData.title.trim(),
       description: formData.description.trim(),
       category: formData.category,
       priority: formData.priority,
     });
-
-    setFormData(initialFormData);
-    setErrors({});
   }
 
   return (
     <div className="task-form-wrapper">
       <div className="task-form-heading">
         <div>
-          <span className="section-label">Yeni kayıt</span>
-          <h3>Yeni görev oluştur</h3>
+          <span className="section-label">
+            {isEditMode ? "Görev düzenleme" : "Yeni kayıt"}
+          </span>
+
+          <h3>
+            {isEditMode
+              ? "Görevi düzenle"
+              : "Yeni görev oluştur"}
+          </h3>
         </div>
 
         <button
@@ -93,10 +116,13 @@ function TaskForm({ onAddTask, onCancel }) {
             onChange={handleChange}
             placeholder="Örneğin: React projesini tamamla"
             maxLength="80"
+            autoFocus
           />
 
           {errors.title && (
-            <span className="form-error">{errors.title}</span>
+            <span className="form-error">
+              {errors.title}
+            </span>
           )}
         </div>
 
@@ -118,7 +144,9 @@ function TaskForm({ onAddTask, onCancel }) {
               {errors.description || ""}
             </span>
 
-            <span>{formData.description.length}/250</span>
+            <span>
+              {formData.description.length}/250
+            </span>
           </div>
         </div>
 
@@ -163,8 +191,13 @@ function TaskForm({ onAddTask, onCancel }) {
             Vazgeç
           </button>
 
-          <button className="primary-button" type="submit">
-            Görevi Kaydet
+          <button
+            className="primary-button"
+            type="submit"
+          >
+            {isEditMode
+              ? "Değişiklikleri Kaydet"
+              : "Görevi Kaydet"}
           </button>
         </div>
       </form>

@@ -1,35 +1,29 @@
 import { useState } from "react";
+import ConfirmModal from "../components/ConfirmModal";
+import TaskCard from "../components/TaskCard";
 import TaskForm from "../components/TaskForm";
+
 import {
   createTask,
+  deleteTask,
   getTasks,
+  updateTask,
 } from "../services/localStorageService";
-
-const priorityLabels = {
-  low: "Düşük",
-  medium: "Orta",
-  high: "Yüksek",
-};
 
 function HomePage() {
   const [tasks, setTasks] = useState(() => getTasks());
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+
   const completedTaskCount = tasks.filter(
     (task) => task.completed
   ).length;
 
-  const pendingTaskCount = tasks.length - completedTaskCount;
+  const pendingTaskCount =
+    tasks.length - completedTaskCount;
 
-  function handleAddTask(taskData) {
-    const newTask = createTask(taskData);
-
-    setTasks((currentTasks) => [newTask, ...currentTasks]);
-    setIsFormOpen(false);
-  }
-
-  function openTaskForm() {
-    setIsFormOpen(true);
-
+  function scrollToForm() {
     window.setTimeout(() => {
       document
         .querySelector(".task-form-wrapper")
@@ -40,8 +34,72 @@ function HomePage() {
     }, 50);
   }
 
+  function openNewTaskForm() {
+    setEditingTask(null);
+    setIsFormOpen(true);
+    scrollToForm();
+  }
+
+  function openEditTaskForm(task) {
+    setEditingTask(task);
+    setIsFormOpen(true);
+    scrollToForm();
+  }
+
   function closeTaskForm() {
     setIsFormOpen(false);
+    setEditingTask(null);
+  }
+
+  function handleSubmitTask(taskData) {
+    if (editingTask) {
+      const updatedTasks = updateTask(
+        editingTask.id,
+        taskData
+      );
+
+      setTasks(updatedTasks);
+    } else {
+      const newTask = createTask(taskData);
+
+      setTasks((currentTasks) => [
+        newTask,
+        ...currentTasks,
+      ]);
+    }
+
+    closeTaskForm();
+  }
+
+  function handleToggleComplete(task) {
+    const updatedTasks = updateTask(task.id, {
+      completed: !task.completed,
+    });
+
+    setTasks(updatedTasks);
+  }
+
+  function handleDeleteRequest(task) {
+    setTaskToDelete(task);
+  }
+
+  function handleConfirmDelete() {
+    if (!taskToDelete) {
+      return;
+    }
+
+    const updatedTasks = deleteTask(taskToDelete.id);
+
+    setTasks(updatedTasks);
+    setTaskToDelete(null);
+
+    if (editingTask?.id === taskToDelete.id) {
+      closeTaskForm();
+    }
+  }
+
+  function handleCancelDelete() {
+    setTaskToDelete(null);
   }
 
   return (
@@ -60,14 +118,14 @@ function HomePage() {
 
             <p>
               Görevlerini oluştur, kategorilere ayır,
-              önceliklendir ve ilerlemeni tek bir ekrandan takip
-              et.
+              önceliklendir ve ilerlemeni tek bir
+              ekrandan takip et.
             </p>
 
             <button
               className="primary-button"
               type="button"
-              onClick={openTaskForm}
+              onClick={openNewTaskForm}
             >
               Yeni Görev Oluştur
             </button>
@@ -75,8 +133,11 @@ function HomePage() {
 
           <div className="hero-card">
             <div className="hero-card-header">
-              <span>Bugünkü ilerleme</span>
-              <span className="status-badge">Aktif</span>
+              <span>Görev ilerlemesi</span>
+
+              <span className="status-badge">
+                Aktif
+              </span>
             </div>
 
             <div className="hero-stat">
@@ -99,7 +160,10 @@ function HomePage() {
         </div>
       </section>
 
-      <section id="tasks" className="tasks-section">
+      <section
+        id="tasks"
+        className="tasks-section"
+      >
         <div className="container">
           <div className="section-heading">
             <div>
@@ -113,7 +177,7 @@ function HomePage() {
             <button
               className="primary-button"
               type="button"
-              onClick={openTaskForm}
+              onClick={openNewTaskForm}
             >
               + Yeni Görev
             </button>
@@ -121,26 +185,30 @@ function HomePage() {
 
           {isFormOpen && (
             <TaskForm
-              onAddTask={handleAddTask}
+              key={editingTask?.id || "new-task"}
+              editingTask={editingTask}
+              onSubmitTask={handleSubmitTask}
               onCancel={closeTaskForm}
             />
           )}
 
           {tasks.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">📋</div>
+              <div className="empty-state-icon">
+                📋
+              </div>
 
               <h3>Henüz görev bulunmuyor</h3>
 
               <p>
-                İlk görevini oluşturarak planlarını görünür hale
-                getir.
+                İlk görevini oluşturarak planlarını
+                görünür hale getir.
               </p>
 
               <button
                 className="empty-state-button"
                 type="button"
-                onClick={openTaskForm}
+                onClick={openNewTaskForm}
               >
                 İlk görevi oluştur
               </button>
@@ -148,60 +216,54 @@ function HomePage() {
           ) : (
             <div className="task-grid">
               {tasks.map((task) => (
-                <article className="task-card" key={task.id}>
-                  <div className="task-card-top">
-                    <span className="category-badge">
-                      {task.category}
-                    </span>
-
-                    <span
-                      className={`priority-badge priority-${task.priority}`}
-                    >
-                      {priorityLabels[task.priority] || "Orta"}
-                    </span>
-                  </div>
-
-                  <h3>{task.title}</h3>
-
-                  <p>
-                    {task.description ||
-                      "Bu görev için açıklama eklenmemiş."}
-                  </p>
-
-                  <div className="task-card-footer">
-                    <span>
-                      {new Date(task.createdAt).toLocaleDateString(
-                        "tr-TR"
-                      )}
-                    </span>
-
-                    <span className="task-status">
-                      {task.completed
-                        ? "Tamamlandı"
-                        : "Bekliyor"}
-                    </span>
-                  </div>
-                </article>
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onToggleComplete={
+                    handleToggleComplete
+                  }
+                  onEdit={openEditTaskForm}
+                  onDelete={handleDeleteRequest}
+                />
               ))}
             </div>
           )}
         </div>
       </section>
 
-      <section id="about" className="about-section">
+      <section
+        id="about"
+        className="about-section"
+      >
         <div className="container about-content">
           <div>
-            <span className="section-label">TaskFlow</span>
+            <span className="section-label">
+              TaskFlow
+            </span>
+
             <h2>Proje hakkında</h2>
           </div>
 
           <p>
-            Bu proje, ReactJS, modern JavaScript, LocalStorage ve
-            Pure CSS kullanılarak geliştirilen bir görev yönetim
-            uygulamasıdır.
+            TaskFlow; ReactJS, modern JavaScript,
+            LocalStorage ve Pure CSS kullanılarak
+            geliştirilen bir görev yönetim
+            uygulamasıdır. Kullanıcılar görevlerini
+            ekleyebilir, listeleyebilir,
+            düzenleyebilir, tamamlayabilir ve
+            silebilir.
           </p>
         </div>
       </section>
+
+      {taskToDelete && (
+        <ConfirmModal
+          title="Görev silinsin mi?"
+          message={`"${taskToDelete.title}" adlı görev kalıcı olarak silinecek.`}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
     </main>
   );
 }

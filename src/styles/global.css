@@ -669,3 +669,210 @@ a {
     grid-template-columns: 1fr;
   }
 }
+.task-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.task-card-completed {
+  border-color: rgba(30, 154, 105, 0.22);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(235, 250, 243, 0.72),
+      white
+    );
+}
+
+.task-card-completed h3 {
+  color: #778094;
+  text-decoration: line-through;
+}
+
+.task-card-completed p {
+  color: #939baa;
+}
+
+.task-status-completed {
+  color: #17875d;
+}
+
+.task-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #edf0f5;
+}
+
+.task-action-button {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.task-action-button:hover {
+  transform: translateY(-1px);
+}
+
+.complete-button {
+  color: #237853;
+  background-color: #e8f7ef;
+}
+
+.complete-button:hover {
+  background-color: #d9f1e5;
+}
+
+.undo-button {
+  color: #8b641c;
+  background-color: #fff3d8;
+}
+
+.undo-button:hover {
+  background-color: #fae9c4;
+}
+
+.edit-button {
+  color: #535acd;
+  background-color: #eef0ff;
+}
+
+.edit-button:hover {
+  background-color: #e1e4ff;
+}
+
+.delete-button {
+  color: #c34259;
+  background-color: #ffebef;
+}
+
+.delete-button:hover {
+  background-color: #ffdde4;
+}
+
+.modal-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background-color: rgba(16, 23, 38, 0.58);
+  backdrop-filter: blur(7px);
+  animation: modalOverlayAppear 180ms ease;
+}
+
+.confirm-modal {
+  width: min(430px, 100%);
+  padding: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 26px;
+  background-color: white;
+  box-shadow: 0 34px 90px rgba(9, 15, 29, 0.34);
+  text-align: center;
+  animation: modalAppear 220ms ease;
+}
+
+.confirm-modal-icon {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 20px;
+  place-items: center;
+  border-radius: 20px;
+  color: #c34259;
+  background-color: #ffebef;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.confirm-modal h3 {
+  margin: 0;
+  font-size: 25px;
+  letter-spacing: -0.035em;
+}
+
+.confirm-modal p {
+  margin: 15px 0 26px;
+  color: #707a8c;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.danger-button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 14px;
+  color: white;
+  background-color: #d6455d;
+  font-weight: 800;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease;
+}
+
+.danger-button:hover {
+  background-color: #c83750;
+  transform: translateY(-1px);
+}
+
+@keyframes modalOverlayAppear {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .task-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .confirm-modal {
+    padding: 26px 20px;
+    border-radius: 22px;
+  }
+
+  .confirm-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-modal-actions button {
+    width: 100%;
+  }
+}
