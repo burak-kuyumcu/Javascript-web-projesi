@@ -13,7 +13,7 @@ import {
   updateTask,
 } from "../services/localStorageService";
 
-function HomePage() {
+function HomePage({ showToast = () => {} }) {
   const [tasks, setTasks] = useState(() => getTasks());
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -21,9 +21,12 @@ function HomePage() {
   const [taskToDelete, setTaskToDelete] = useState(null);
 
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] =
+    useState("all");
+  const [categoryFilter, setCategoryFilter] =
+    useState("all");
+  const [priorityFilter, setPriorityFilter] =
+    useState("all");
 
   const completedTaskCount = tasks.filter(
     (task) => task.completed
@@ -38,11 +41,13 @@ function HomePage() {
       .toLocaleLowerCase("tr-TR");
 
     return tasks.filter((task) => {
-      const taskTitle = task.title
-        .toLocaleLowerCase("tr-TR");
+      const taskTitle = task.title.toLocaleLowerCase(
+        "tr-TR"
+      );
 
-      const taskDescription = (task.description || "")
-        .toLocaleLowerCase("tr-TR");
+      const taskDescription = (
+        task.description || ""
+      ).toLocaleLowerCase("tr-TR");
 
       const matchesSearch =
         normalizedSearchText === "" ||
@@ -51,8 +56,10 @@ function HomePage() {
 
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "completed" && task.completed) ||
-        (statusFilter === "pending" && !task.completed);
+        (statusFilter === "completed" &&
+          task.completed) ||
+        (statusFilter === "pending" &&
+          !task.completed);
 
       const matchesCategory =
         categoryFilter === "all" ||
@@ -113,6 +120,7 @@ function HomePage() {
       );
 
       setTasks(updatedTasks);
+      showToast("Görev başarıyla güncellendi.");
     } else {
       const newTask = createTask(taskData);
 
@@ -120,17 +128,27 @@ function HomePage() {
         newTask,
         ...currentTasks,
       ]);
+
+      showToast("Yeni görev başarıyla oluşturuldu.");
     }
 
     closeTaskForm();
   }
 
   function handleToggleComplete(task) {
+    const nextCompletedValue = !task.completed;
+
     const updatedTasks = updateTask(task.id, {
-      completed: !task.completed,
+      completed: nextCompletedValue,
     });
 
     setTasks(updatedTasks);
+
+    showToast(
+      nextCompletedValue
+        ? "Görev tamamlandı olarak işaretlendi."
+        : "Görev yeniden bekleyenlere taşındı."
+    );
   }
 
   function handleDeleteRequest(task) {
@@ -142,14 +160,17 @@ function HomePage() {
       return;
     }
 
-    const updatedTasks = deleteTask(taskToDelete.id);
+    const deletedTaskId = taskToDelete.id;
+    const updatedTasks = deleteTask(deletedTaskId);
 
     setTasks(updatedTasks);
     setTaskToDelete(null);
 
-    if (editingTask?.id === taskToDelete.id) {
+    if (editingTask?.id === deletedTaskId) {
       closeTaskForm();
     }
+
+    showToast("Görev kalıcı olarak silindi.", "info");
   }
 
   function handleCancelDelete() {
@@ -161,11 +182,16 @@ function HomePage() {
     setStatusFilter("all");
     setCategoryFilter("all");
     setPriorityFilter("all");
+
+    showToast("Arama ve filtreler temizlendi.", "info");
   }
 
   return (
     <main>
-      <section className="hero-section">
+      <section
+        id="top"
+        className="hero-section"
+      >
         <div className="container hero-content">
           <div className="hero-text">
             <span className="hero-label">
@@ -179,8 +205,8 @@ function HomePage() {
 
             <p>
               Görevlerini oluştur, kategorilere ayır,
-              önceliklendir ve ilerlemeni tek bir ekrandan takip
-              et.
+              önceliklendir ve ilerlemeni tek bir ekrandan
+              takip et.
             </p>
 
             <button
@@ -196,7 +222,9 @@ function HomePage() {
             <div className="hero-card-header">
               <span>Görev ilerlemesi</span>
 
-              <span className="status-badge">Aktif</span>
+              <span className="status-badge">
+                Aktif
+              </span>
             </div>
 
             <div className="hero-stat">
@@ -219,7 +247,10 @@ function HomePage() {
         </div>
       </section>
 
-      <section id="tasks" className="tasks-section">
+      <section
+        id="tasks"
+        className="tasks-section"
+      >
         <div className="container">
           <div className="section-heading">
             <div>
@@ -268,13 +299,15 @@ function HomePage() {
 
           {tasks.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">📋</div>
+              <div className="empty-state-icon">
+                📋
+              </div>
 
               <h3>Henüz görev bulunmuyor</h3>
 
               <p>
-                İlk görevini oluşturarak planlarını görünür hale
-                getir.
+                İlk görevini oluşturarak planlarını
+                görünür hale getir.
               </p>
 
               <button
@@ -287,7 +320,9 @@ function HomePage() {
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="empty-state filtered-empty-state">
-              <div className="empty-state-icon">🔎</div>
+              <div className="empty-state-icon">
+                🔎
+              </div>
 
               <h3>Eşleşen görev bulunamadı</h3>
 
@@ -310,7 +345,9 @@ function HomePage() {
                 <TaskCard
                   key={task.id}
                   task={task}
-                  onToggleComplete={handleToggleComplete}
+                  onToggleComplete={
+                    handleToggleComplete
+                  }
                   onEdit={openEditTaskForm}
                   onDelete={handleDeleteRequest}
                 />
@@ -320,20 +357,27 @@ function HomePage() {
         </div>
       </section>
 
-      <section id="about" className="about-section">
+      <section
+        id="about"
+        className="about-section"
+      >
         <div className="container about-content">
           <div>
-            <span className="section-label">TaskFlow</span>
+            <span className="section-label">
+              TaskFlow
+            </span>
+
             <h2>Proje hakkında</h2>
           </div>
 
           <p>
             TaskFlow; ReactJS, modern JavaScript,
-            LocalStorage ve Pure CSS kullanılarak geliştirilen
-            bir görev yönetim uygulamasıdır. Kullanıcılar
-            görevlerini ekleyebilir, listeleyebilir,
-            düzenleyebilir, tamamlayabilir, silebilir,
-            arayabilir ve filtreleyebilir.
+            LocalStorage ve Pure CSS kullanılarak
+            geliştirilen bir görev yönetim
+            uygulamasıdır. Kullanıcılar görevlerini
+            ekleyebilir, listeleyebilir, düzenleyebilir,
+            tamamlayabilir, silebilir, arayabilir ve
+            filtreleyebilir.
           </p>
         </div>
       </section>
